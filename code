@@ -1,1 +1,30 @@
 
+import psutil
+import serial
+import time
+
+def get_battery_percentage():
+    battery = psutil.sensors_battery()
+    return battery.percent if battery else None
+
+def send_battery_data(bluetooth_port, baud_rate=9600):
+    try:
+        ser = serial.Serial(bluetooth_port, baud_rate, timeout=1)
+        time.sleep(2)  # Wait for connection to establish
+        while True:
+            battery_percentage = get_battery_percentage()
+            if battery_percentage is not None:
+                data_to_send = f"Battery:{battery_percentage}%\n"
+                ser.write(data_to_send.encode())
+                print(f"Sent: {data_to_send}")
+            else:
+                print("Failed to retrieve battery percentage.")
+            time.sleep(5)  # Send data every 5 seconds
+    except serial.SerialException as e:
+        print(f"Error: {e}")
+    finally:
+        ser.close()
+
+if __name__ == "__main__":
+    BLUETOOTH_PORT = "COM5"  # Change this to your Bluetooth module's port (e.g., '/dev/rfcomm0' on Linux)
+    send_battery_data(BLUETOOTH_PORT)
